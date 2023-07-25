@@ -35,6 +35,9 @@ ls noisy_trainset_28spk_wav | xargs -I {} sox noisy_trainset_28spk_wav/{} -r 160
 echo "*************CLONE CODE*******************"
 git clone https://github.com/KhanhNguyen4999/knowledge_distillation_on_demucs_.git
 cd knowledge_distillation_on_demucs_
+pip install -r requirements_cuda.txt
+pip install julius
+pip install hydra_core==0.11.3 hydra_colorlog==0.1.4
 
 echo "*************CREATE DATA*******************"
 # train
