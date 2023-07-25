@@ -23,12 +23,15 @@ def run(args):
     from denoiser.data import NoisyCleanSet
     from denoiser.demucs import Demucs
     from denoiser.solver import Solver
+    from pretrained import dns48
+
     distrib.init(args)
 
     # torch also initialize cuda seed if available
     torch.manual_seed(args.seed)
 
-    teacher_model = Demucs(**args.teacher_demucs, sample_rate=args.sample_rate)
+    # teacher_model = Demucs(**args.teacher_demucs, sample_rate=args.sample_rate)
+    teacher_model = dns48()
     student_model = Demucs(**args.student_demucs, sample_rate=args.sample_rate)
 
 

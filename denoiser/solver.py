@@ -19,7 +19,6 @@ from .enhance import enhance
 from .evaluate import evaluate
 from .stft_loss import MultiResolutionSTFTLoss
 from .utils import bold, copy_state, pull_metric, serialize_model, swap_state, LogProgress, knowledge_distillation_loss
-
 logger = logging.getLogger(__name__)
 
 
@@ -213,7 +212,8 @@ class Solver(object):
                 noise, clean = sources
                 noisy = noise + clean
 
-            teacher_estimate = self.dteacher_model(noisy)
+            with torch.no_grad():
+                teacher_estimate = self.dteacher_model(noisy)
             student_estimate = self.dmodel(noisy)
             # apply a loss function after each layer
             with torch.autograd.set_detect_anomaly(True):
@@ -242,5 +242,5 @@ class Solver(object):
             total_loss += loss.item()
             logprog.update(loss=format(total_loss / (i + 1), ".5f"))
             # Just in case, clear some memory
-            del loss, estimate
+            del loss, teacher_estimate, student_estimate
         return distrib.average([total_loss / (i + 1)], i + 1)[0]
