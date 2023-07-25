@@ -23,7 +23,7 @@ def run(args):
     from denoiser.data import NoisyCleanSet
     from denoiser.demucs import Demucs
     from denoiser.solver import Solver
-    from pretrained import dns48
+    from denoiser.pretrained import dns48
 
     distrib.init(args)
 
