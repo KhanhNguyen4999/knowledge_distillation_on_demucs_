@@ -28,14 +28,23 @@ def run(args):
     # torch also initialize cuda seed if available
     torch.manual_seed(args.seed)
 
-    model = Demucs(**args.demucs, sample_rate=args.sample_rate)
+    teacher_model = Demucs(**args.teacher_demucs, sample_rate=args.sample_rate)
+    student_model = Demucs(**args.student_demucs, sample_rate=args.sample_rate)
+
 
     if args.show:
-        logger.info(model)
-        mb = sum(p.numel() for p in model.parameters()) * 4 / 2**20
+        logger.info(teacher_model)
+        mb = sum(p.numel() for p in teacher_model.parameters()) * 4 / 2**20
         logger.info('Size: %.1f MB', mb)
-        if hasattr(model, 'valid_length'):
-            field = model.valid_length(1)
+        if hasattr(teacher_model, 'valid_length'):
+            field = teacher_model.valid_length(1)
+            logger.info('Field: %.1f ms', field / args.sample_rate * 1000)
+
+        logger.info(student_model)
+        mb = sum(p.numel() for p in student_model.parameters()) * 4 / 2**20
+        logger.info('Size: %.1f MB', mb)
+        if hasattr(student_model, 'valid_length'):
+            field = student_model.valid_length(1)
             logger.info('Field: %.1f ms', field / args.sample_rate * 1000)
         return
 
@@ -45,8 +54,8 @@ def run(args):
     length = int(args.segment * args.sample_rate)
     stride = int(args.stride * args.sample_rate)
     # Demucs requires a specific number of samples to avoid 0 padding during training
-    if hasattr(model, 'valid_length'):
-        length = model.valid_length(length)
+    if hasattr(teacher_model, 'valid_length'):
+        length = teacher_model.valid_length(length)
     kwargs = {"matching": args.dset.matching, "sample_rate": args.sample_rate}
     # Building datasets and loaders
     tr_dataset = NoisyCleanSet(
@@ -66,17 +75,18 @@ def run(args):
     data = {"tr_loader": tr_loader, "cv_loader": cv_loader, "tt_loader": tt_loader}
 
     if torch.cuda.is_available():
-        model.cuda()
+        teacher_model.cuda()
+        student_model.cuda()
 
     # optimizer
     if args.optim == "adam":
-        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, betas=(0.9, args.beta2))
+        optimizer = torch.optim.Adam(student_model.parameters(), lr=args.lr, betas=(0.9, args.beta2))
     else:
         logger.fatal('Invalid optimizer %s', args.optim)
         os._exit(1)
 
     # Construct Solver
-    solver = Solver(data, model, optimizer, args)
+    solver = Solver(data, teacher_model, student_model, optimizer, args)
     solver.train()
 
 

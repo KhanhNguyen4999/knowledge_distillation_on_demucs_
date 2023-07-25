@@ -52,6 +52,7 @@ optim: adam
 lr: 3e-4
 beta2: 0.999
 loss: l1
+kd_loss: true
 stft_loss: False
 stft_sc_factor: .5
 stft_mag_factor: .5
@@ -60,10 +61,25 @@ batch_size: 64
 
 # Models
 model: demucs # either demucs or dwave
-demucs:
+teacher_demucs:
   chin: 1
   chout: 1
   hidden: 48
+  max_hidden: 10000
+  causal: true
+  glu: true
+  depth: 5
+  kernel_size: 8
+  stride: 4
+  normalize: true
+  resample: 4
+  growth: 2
+  rescale: 0.1
+
+student_demucs:
+  chin: 1
+  chout: 1
+  hidden: 16
   max_hidden: 10000
   causal: true
   glu: true

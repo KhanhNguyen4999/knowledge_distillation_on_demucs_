@@ -18,18 +18,21 @@ from . import augment, distrib, pretrained
 from .enhance import enhance
 from .evaluate import evaluate
 from .stft_loss import MultiResolutionSTFTLoss
-from .utils import bold, copy_state, pull_metric, serialize_model, swap_state, LogProgress
+from .utils import bold, copy_state, pull_metric, serialize_model, swap_state, LogProgress, knowledge_distillation_loss
 
 logger = logging.getLogger(__name__)
 
 
 class Solver(object):
-    def __init__(self, data, model, optimizer, args):
+    def __init__(self, data, teacher_model, model, optimizer, args):
         self.tr_loader = data['tr_loader']
         self.cv_loader = data['cv_loader']
         self.tt_loader = data['tt_loader']
+        self.teacher_model = teacher_model
         self.model = model
+        self.dteacher_model = distrib.wrap(teacher_model)
         self.dmodel = distrib.wrap(model)
+
         self.optimizer = optimizer
 
         # data augment
@@ -134,6 +137,8 @@ class Solver(object):
         for epoch in range(len(self.history), self.epochs):
             # Train one epoch
             self.model.train()
+            self.teacher_model.eval()
+            
             start = time.time()
             logger.info('-' * 70)
             logger.info("Training...")
@@ -207,7 +212,9 @@ class Solver(object):
                 sources = self.augment(sources)
                 noise, clean = sources
                 noisy = noise + clean
-            estimate = self.dmodel(noisy)
+
+            teacher_estimate = self.dteacher_model(noisy)
+            student_estimate = self.dmodel(noisy)
             # apply a loss function after each layer
             with torch.autograd.set_detect_anomaly(True):
                 if self.args.loss == 'l1':
@@ -222,6 +229,9 @@ class Solver(object):
                 if self.args.stft_loss:
                     sc_loss, mag_loss = self.mrstftloss(estimate.squeeze(1), clean.squeeze(1))
                     loss += sc_loss + mag_loss
+                
+                if self.args.kd_loss:
+                    loss += knowledge_distillation_loss(teacher_estimate, student_estimate)
 
                 # optimize model in training mode
                 if not cross_valid:

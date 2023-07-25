@@ -8,10 +8,13 @@
 
 python train.py \
   dset=valentini \
-  demucs.causal=1 \
-  demucs.hidden=48 \
+  teacher_demucs.causal=1 \
+  teacher_demucs.hidden=48 \
+  teacher_demucs.resample=4 \
+  student_demucs.causal=1 \
+  student_demucs.hidden=16 \
+  student_demucs.resample=4 \
   bandmask=0.2 \
-  demucs.resample=4 \
   remix=1 \
   shift=8000 \
   shift_same=True \
@@ -20,4 +23,7 @@ python train.py \
   segment=4.5 \
   stride=0.5 \
   ddp=1 $@
+
+
+  
 
