@@ -218,16 +218,16 @@ class Solver(object):
             # apply a loss function after each layer
             with torch.autograd.set_detect_anomaly(True):
                 if self.args.loss == 'l1':
-                    loss = F.l1_loss(clean, estimate)
+                    loss = F.l1_loss(clean, student_estimate)
                 elif self.args.loss == 'l2':
-                    loss = F.mse_loss(clean, estimate)
+                    loss = F.mse_loss(clean, student_estimate)
                 elif self.args.loss == 'huber':
-                    loss = F.smooth_l1_loss(clean, estimate)
+                    loss = F.smooth_l1_loss(clean, student_estimate)
                 else:
                     raise ValueError(f"Invalid loss {self.args.loss}")
                 # MultiResolution STFT loss
                 if self.args.stft_loss:
-                    sc_loss, mag_loss = self.mrstftloss(estimate.squeeze(1), clean.squeeze(1))
+                    sc_loss, mag_loss = self.mrstftloss(student_estimate.squeeze(1), clean.squeeze(1))
                     loss += sc_loss + mag_loss
                 
                 if self.args.kd_loss:
