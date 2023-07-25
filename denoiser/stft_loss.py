@@ -25,7 +25,7 @@ def stft(x, fft_size, hop_size, win_length, window):
     Returns:
         Tensor: Magnitude spectrogram (B, #frames, fft_size // 2 + 1).
     """
-    x_stft = torch.stft(x, fft_size, hop_size, win_length, window, return_complex=True)
+    x_stft = torch.view_as_real(torch.stft(x, fft_size, hop_size, win_length, window, return_complex=True))
     real = x_stft[..., 0]
     imag = x_stft[..., 1]
 
@@ -91,8 +91,8 @@ class STFTLoss(torch.nn.Module):
             Tensor: Spectral convergence loss value.
             Tensor: Log STFT magnitude loss value.
         """
-        x_mag = torch.view_as_real(stft(x, self.fft_size, self.shift_size, self.win_length, self.window, return_complex=True))
-        y_mag = torch.view_as_real(stft(y, self.fft_size, self.shift_size, self.win_length, self.window, return_complex=True))
+        x_mag = stft(x, self.fft_size, self.shift_size, self.win_length, self.window)
+        y_mag = stft(y, self.fft_size, self.shift_size, self.win_length, self.window)
         sc_loss = self.spectral_convergenge_loss(x_mag, y_mag)
         mag_loss = self.log_stft_magnitude_loss(x_mag, y_mag)
 
